@@ -73,6 +73,22 @@
         display: block;
       }
 
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: rgba(98, 218, 207, 0.15);
+        color: var(--secondary);
+        border: 1px solid rgba(98, 218, 207, 0.4);
+        margin-bottom: 14px;
+      }
+
       #status {
         font-size: 1rem;
         margin: 10px 0 6px;
@@ -101,6 +117,7 @@
   <body>
     <main>
       <div id="game-panel">
+        <span class="status-badge" aria-live="polite" aria-label="Demo status badge">status · live</span>
         <h1>Minion Mayhem</h1>
         <p id="flavor">Guide the little Minion through the lab, gobble bananas, and dodge yourself!</p>
         <canvas id="game" width="360" height="360" aria-label="Minion-themed snake game"></canvas>
