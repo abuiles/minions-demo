@@ -26,6 +26,7 @@
         justify-content: center;
         align-items: center;
         gap: 16px;
+        position: relative;
         font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
         background: radial-gradient(circle at 20% -10%, #4a1f4b, transparent 40%),
           radial-gradient(circle at 80% 0%, #1b6d87, transparent 45%),
@@ -89,6 +90,31 @@
         margin-bottom: 14px;
       }
 
+      .page-status-bar {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        position: absolute;
+        top: 12px;
+        left: 0;
+        padding-top: 4px;
+        pointer-events: none;
+      }
+
+      .tiny-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        font-size: 0.65rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #fefefe;
+        letter-spacing: 0.4px;
+        pointer-events: auto;
+      }
+
       #status {
         font-size: 1rem;
         margin: 10px 0 6px;
@@ -115,6 +141,9 @@
     </style>
   </head>
   <body>
+    <div class="page-status-bar" aria-live="polite"> 
+      <span class="tiny-status-badge" aria-label="Demo status">Live · Beta</span>
+    </div>
     <main>
       <div id="game-panel">
         <span class="status-badge" aria-live="polite" aria-label="Demo status badge">status · live</span>
