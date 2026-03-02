@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dummy Snake</title>
+    <title>Minion Mayhem</title>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0c1018;
-        --card: #161b27;
-        --accent: #66f6ff;
+        --bg: #090b14;
+        --panel: #13182a;
+        --accent: #f4d03f;
+        --secondary: #1b61c7;
+        --glass: rgba(255, 255, 255, 0.08);
       }
 
       * {
@@ -22,48 +24,67 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        font-family: 'Segoe UI', system-ui, sans-serif;
-        background: radial-gradient(circle at top, #11162b, #05070f 60%);
-        color: #e1e7ff;
+        font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+        background: radial-gradient(circle at top, #141c37, #080b16 60%);
+        color: #eaf3ff;
+        padding: 20px;
       }
 
       #game-panel {
-        background: var(--card);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 24px;
-        width: min(420px, 90vw);
+        width: min(480px, 95vw);
+        padding: 32px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.6));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 20px 60px rgba(3, 1, 15, 0.8);
         text-align: center;
-        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.45);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 2.8rem);
+        letter-spacing: 2px;
+      }
+
+      p {
+        margin: 8px 0;
       }
 
       canvas {
         width: 100%;
         max-width: 360px;
         height: auto;
-        border-radius: 12px;
-        background: #050914;
-        border: 2px solid rgba(255, 255, 255, 0.12);
+        margin: 16px auto;
+        border-radius: 16px;
+        background: radial-gradient(circle at top right, #1a1f37, #04060b 70%);
+        border: 3px solid var(--glass);
+        display: block;
       }
 
       #status {
-        margin: 16px 0 4px;
         font-size: 1rem;
+        margin: 10px 0 6px;
       }
 
       #hint {
+        font-size: 0.9rem;
+        color: #b7c0ff;
+        margin-bottom: 0;
+      }
+
+      #flavor {
         font-size: 0.85rem;
-        color: #91a4ff;
-        margin: 0;
+        color: #a4a9b7;
       }
     </style>
   </head>
   <body>
     <div id="game-panel">
-      <h1>Dummy Snake</h1>
-      <canvas id="game" width="360" height="360" aria-label="Simple snake game"></canvas>
-      <p id="status">Score: 0 · Use &#8593;&#8595;&#8592;&#8594; or WASD</p>
-      <p id="hint">The snake wraps around the edges. Eat the blue dot to grow.</p>
+      <h1>Minion Mayhem</h1>
+      <p id="flavor">Guide the little Minion through the lab, gobble bananas, and dodge yourself!</p>
+      <canvas id="game" width="360" height="360" aria-label="Minion-themed snake game"></canvas>
+      <p id="status" role="status">Score: 0 · Use ↑↓←→ or WASD to steer</p>
+      <p id="hint">Collect the bananas to grow the crew. Watch for goggles-on-goggles collisions!</p>
     </div>
 
     <script>
@@ -74,36 +95,91 @@
       const rows = canvas.height / tileSize;
       const status = document.getElementById('status');
 
+      const colors = {
+        yellow: '#f4d03f',
+        blue: '#1b61c7',
+        gray: '#3b3b3b',
+        lens: '#fdfdfd',
+        pupil: '#2b2b2b',
+        banana: '#f7cf4b',
+      };
+
       let snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
       let direction = { x: 1, y: 0 };
       let nextDirection = { ...direction };
-      let apple = spawnApple();
+      let banana = spawnBanana();
       let score = 0;
 
-      function spawnApple() {
+      function spawnBanana() {
         return {
           x: Math.floor(Math.random() * cols),
           y: Math.floor(Math.random() * rows),
         };
       }
 
+      function drawBanana() {
+        const px = banana.x * tileSize + tileSize * 0.1;
+        const py = banana.y * tileSize + tileSize * 0.45;
+        ctx.fillStyle = colors.banana;
+        ctx.beginPath();
+        ctx.ellipse(px + 12, py + 4, tileSize * 0.4, tileSize * 0.18, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = colors.gray;
+        ctx.fillRect(px + 18, py + 4, 6, 2);
+        ctx.fillStyle = colors.banana;
+        ctx.fillRect(px + 22, py + 4, 2, 2);
+      }
+
+      function drawSegment(segment, isHead) {
+        const px = segment.x * tileSize + 2;
+        const py = segment.y * tileSize + 2;
+        const size = tileSize - 4;
+
+        ctx.fillStyle = colors.yellow;
+        ctx.fillRect(px, py, size, size);
+        ctx.fillStyle = colors.blue;
+        ctx.fillRect(px, py + size * 0.55, size, size * 0.45);
+
+        if (isHead) {
+          const strapHeight = size * 0.18;
+          ctx.fillStyle = colors.gray;
+          ctx.fillRect(px, py + size * 0.2, size, strapHeight);
+
+          const lensRadius = size * 0.25;
+          const spacing = size * 0.1;
+          const lensY = py + size * 0.38;
+          const leftX = px + size * 0.28;
+          const rightX = px + size * 0.72;
+
+          ctx.fillStyle = colors.lens;
+          ctx.beginPath();
+          ctx.arc(leftX, lensY, lensRadius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(rightX, lensY, lensRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = colors.pupil;
+          ctx.beginPath();
+          ctx.arc(leftX, lensY, lensRadius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(rightX, lensY, lensRadius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
       function draw() {
         ctx.fillStyle = '#050914';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.fillStyle = '#66f6ff';
-        ctx.fillRect(apple.x * tileSize + 2, apple.y * tileSize + 2, tileSize - 4, tileSize - 4);
-
-        ctx.fillStyle = '#94ffa5';
-        snake.forEach((segment) => {
-          ctx.fillRect(segment.x * tileSize + 1, segment.y * tileSize + 1, tileSize - 2, tileSize - 2);
-        });
+        drawBanana();
+        snake.forEach((segment, index) => drawSegment(segment, index === 0));
       }
 
-      function wrap(position, max) {
-        if (position < 0) return max - 1;
-        if (position >= max) return 0;
-        return position;
+      function wrap(value, limit) {
+        if (value < 0) return limit - 1;
+        if (value >= limit) return 0;
+        return value;
       }
 
       function tick() {
@@ -119,20 +195,21 @@
           snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
           direction = { x: 1, y: 0 };
           nextDirection = { ...direction };
-          apple = spawnApple();
-          status.textContent = 'Ooops! Self collision. Score reset to 0.';
+          banana = spawnBanana();
+          status.textContent = 'Chill—Minion pile-up! Score reset.';
+          draw();
           return;
         }
 
         snake.unshift(newHead);
-        if (newHead.x === apple.x && newHead.y === apple.y) {
+        if (newHead.x === banana.x && newHead.y === banana.y) {
           score += 1;
-          apple = spawnApple();
+          banana = spawnBanana();
         } else {
           snake.pop();
         }
 
-        status.textContent = `Score: ${score} · Use ↑↓←→ or WASD`;
+        status.textContent = `Minion crew: ${score} · steer with ↑↓←→ or WASD`;
         draw();
       }
 
@@ -160,7 +237,7 @@
       });
 
       draw();
-      setInterval(tick, 120);
+      setInterval(tick, 140);
     </script>
   </body>
 </html>
