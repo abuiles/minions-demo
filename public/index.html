@@ -150,11 +150,18 @@
       let snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
       let direction = { x: 1, y: 0 };
       let nextDirection = { ...direction };
-      let item = spawnItem();
       let score = 0;
       let randomState = 0;
       const itemTypes = { banana: 'banana', explosive: 'explosive' };
       const explosiveSpawnChance = 0.14;
+      const supportedSeedModes = new Set([
+        'banana',
+        'explosive',
+        'random',
+        'normal',
+      ]);
+      let queuedItemType = null;
+      let item;
 
       let rand = Math.random;
 
@@ -176,11 +183,27 @@
         return Math.floor(rand() * max);
       }
 
+      function setNextItemType(nextType) {
+        const normalized = typeof nextType === 'string' ? nextType.toLowerCase() : '';
+        if (!supportedSeedModes.has(normalized)) return queuedItemType;
+
+        queuedItemType = normalized === 'random' || normalized === 'normal' ? null : normalized;
+        return queuedItemType;
+      }
+
       function spawnItem() {
+        const forcedType = queuedItemType;
+        queuedItemType = null;
+        const type = forcedType
+          ? forcedType
+          : rand() < explosiveSpawnChance
+            ? itemTypes.explosive
+            : itemTypes.banana;
+
         return {
           x: randomInt(cols),
           y: randomInt(rows),
-          type: rand() < explosiveSpawnChance ? itemTypes.explosive : itemTypes.banana,
+          type,
         };
       }
 
@@ -190,6 +213,12 @@
         const seed = Number(seedParam);
         if (!Number.isFinite(seed)) return;
         setSeed(seed);
+      }
+
+      function forceItemTypeFromQuery() {
+        const nextItemType = query.get('nextItemType') || query.get('itemType');
+        if (nextItemType === null) return;
+        setNextItemType(nextItemType);
       }
 
       function drawExplosive(target) {
@@ -352,8 +381,11 @@
       });
 
       forceDeterministicSeedFromQuery();
+      forceItemTypeFromQuery();
+      item = spawnItem();
       window.__minionsDemo = {
         setSeed,
+        setNextItemType,
         getState: () => ({
           seed: randomState,
           snake: [...snake],
