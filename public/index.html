@@ -134,6 +134,7 @@
       const cols = canvas.width / tileSize;
       const rows = canvas.height / tileSize;
       const status = document.getElementById('status');
+      const query = new URLSearchParams(location.search);
 
       const colors = {
         yellow: '#f4d03f',
@@ -142,24 +143,103 @@
         lens: '#fdfdfd',
         pupil: '#2b2b2b',
         banana: '#f7cf4b',
+        explosive: '#ff4f4f',
+        fuse: '#ffd166',
       };
 
       let snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
       let direction = { x: 1, y: 0 };
       let nextDirection = { ...direction };
-      let banana = spawnBanana();
       let score = 0;
+      let randomState = 0;
+      const itemTypes = { banana: 'banana', explosive: 'explosive' };
+      const explosiveSpawnChance = 0.14;
+      const supportedSeedModes = new Set([
+        'banana',
+        'explosive',
+        'random',
+        'normal',
+      ]);
+      let queuedItemType = null;
+      let item;
 
-      function spawnBanana() {
+      let rand = Math.random;
+
+      function setSeed(seed) {
+        const parsedSeed = Number(seed);
+        if (!Number.isFinite(parsedSeed)) {
+          return randomState;
+        }
+
+        randomState = (parsedSeed >>> 0) || 1;
+        rand = () => {
+          randomState = (1664525 * randomState + 1013904223) >>> 0;
+          return randomState / 0x100000000;
+        };
+        return randomState;
+      }
+
+      function randomInt(max) {
+        return Math.floor(rand() * max);
+      }
+
+      function setNextItemType(nextType) {
+        const normalized = typeof nextType === 'string' ? nextType.toLowerCase() : '';
+        if (!supportedSeedModes.has(normalized)) return queuedItemType;
+
+        queuedItemType = normalized === 'random' || normalized === 'normal' ? null : normalized;
+        return queuedItemType;
+      }
+
+      function spawnItem() {
+        const forcedType = queuedItemType;
+        queuedItemType = null;
+        const type = forcedType
+          ? forcedType
+          : rand() < explosiveSpawnChance
+            ? itemTypes.explosive
+            : itemTypes.banana;
+
         return {
-          x: Math.floor(Math.random() * cols),
-          y: Math.floor(Math.random() * rows),
+          x: randomInt(cols),
+          y: randomInt(rows),
+          type,
         };
       }
 
-      function drawBanana() {
-        const px = banana.x * tileSize + tileSize * 0.1;
-        const py = banana.y * tileSize + tileSize * 0.45;
+      function forceDeterministicSeedFromQuery() {
+        const seedParam = query.get('seed');
+        if (seedParam === null) return;
+        const seed = Number(seedParam);
+        if (!Number.isFinite(seed)) return;
+        setSeed(seed);
+      }
+
+      function forceItemTypeFromQuery() {
+        const nextItemType = query.get('nextItemType') || query.get('itemType');
+        if (nextItemType === null) return;
+        setNextItemType(nextItemType);
+      }
+
+      function drawExplosive(target) {
+        const px = target.x * tileSize + tileSize * 0.15;
+        const py = target.y * tileSize + tileSize * 0.22;
+
+        ctx.fillStyle = colors.explosive;
+        ctx.beginPath();
+        ctx.arc(px + tileSize * 0.5, py + tileSize * 0.45, tileSize * 0.33, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = colors.fuse;
+        ctx.fillRect(px + tileSize * 0.47, py + tileSize * 0.02, tileSize * 0.06, tileSize * 0.35);
+        ctx.fillStyle = colors.pupil;
+        ctx.fillRect(px + tileSize * 0.34, py + tileSize * 0.15, tileSize * 0.22, tileSize * 0.08);
+        ctx.fillRect(px + tileSize * 0.44, py + tileSize * 0.4, tileSize * 0.22, tileSize * 0.08);
+      }
+
+      function drawBanana(target = item) {
+        const px = target.x * tileSize + tileSize * 0.1;
+        const py = target.y * tileSize + tileSize * 0.45;
         ctx.fillStyle = colors.banana;
         ctx.beginPath();
         ctx.ellipse(px + 12, py + 4, tileSize * 0.4, tileSize * 0.18, -0.5, 0, Math.PI * 2);
@@ -168,6 +248,15 @@
         ctx.fillRect(px + 18, py + 4, 6, 2);
         ctx.fillStyle = colors.banana;
         ctx.fillRect(px + 22, py + 4, 2, 2);
+      }
+
+      function drawItem() {
+        if (item.type === itemTypes.explosive) {
+          drawExplosive(item);
+          return;
+        }
+
+        drawBanana(item);
       }
 
       function drawSegment(segment, isHead) {
@@ -212,7 +301,7 @@
       function draw() {
         ctx.fillStyle = '#050914';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        drawBanana();
+        drawItem();
         snake.forEach((segment, index) => drawSegment(segment, index === 0));
       }
 
@@ -235,21 +324,36 @@
           snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
           direction = { x: 1, y: 0 };
           nextDirection = { ...direction };
-          banana = spawnBanana();
+          item = spawnItem();
           status.textContent = 'Chill—Minion pile-up! Score reset.';
           draw();
           return;
         }
 
         snake.unshift(newHead);
-        if (newHead.x === banana.x && newHead.y === banana.y) {
-          score += 1;
-          banana = spawnBanana();
+        let ateItem = false;
+        let exploded = false;
+        if (newHead.x === item.x && newHead.y === item.y) {
+          ateItem = true;
+          if (item.type === itemTypes.explosive) {
+            snake = [snake[0]];
+            status.textContent = 'BOOM! Explosive avocado exploded; only one minion survives.';
+            exploded = true;
+          } else {
+            score += 1;
+          }
+          item = spawnItem();
         } else {
           snake.pop();
         }
 
-        status.textContent = `Minion crew: ${score} · steer with ↑↓←→ or WASD`;
+        if (exploded) {
+          status.textContent = 'BOOM! Explosive avocado exploded; only one minion survives.';
+        } else if (ateItem) {
+          status.textContent = `Minion crew: ${score} · steer with ↑↓←→ or WASD`;
+        } else {
+          status.textContent = `Minion crew: ${score} · steer with ↑↓←→ or WASD`;
+        }
         draw();
       }
 
@@ -276,6 +380,20 @@
         nextDirection = next;
       });
 
+      forceDeterministicSeedFromQuery();
+      forceItemTypeFromQuery();
+      item = spawnItem();
+      window.__minionsDemo = {
+        setSeed,
+        setNextItemType,
+        getState: () => ({
+          seed: randomState,
+          snake: [...snake],
+          item,
+          score,
+        }),
+        tick,
+      };
       draw();
       setInterval(tick, 140);
     </script>
