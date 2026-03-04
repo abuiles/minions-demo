@@ -186,10 +186,21 @@
       let randomState = 0;
       let gameMode = 'normal';
       let gameLoop = null;
-      const baseTickMs = 140;
-      const minTickMs = 60;
-      const progressiveTickStep = 8;
-      const progressiveTickStepEvery = 3;
+      const defaultGameMode = 'normal';
+      const gameModeDefinitions = {
+        normal: {
+          label: 'Normal',
+          baseTickMs: 140,
+        },
+        progressive: {
+          label: 'Progressive speed',
+          baseTickMs: 140,
+          minTickMs: 60,
+          tickStepMs: 8,
+          tickStepEvery: 3,
+          maxSteps: 10,
+        },
+      };
       const itemTypes = { banana: 'banana', explosive: 'explosive' };
       const explosiveSpawnChance = 0.14;
       const supportedSeedModes = new Set([
@@ -265,16 +276,23 @@
 
       function parseGameMode(mode) {
         const normalized = typeof mode === 'string' ? mode.toLowerCase() : '';
-        return supportedGameModes.has(normalized) ? normalized : 'normal';
+        return supportedGameModes.has(normalized) ? normalized : defaultGameMode;
+      }
+
+      function getModeDefinition(mode) {
+        return gameModeDefinitions[parseGameMode(mode)] || gameModeDefinitions[defaultGameMode];
       }
 
       function getTickInterval() {
         if (gameMode === 'progressive') {
-          const tiers = Math.floor(score / progressiveTickStepEvery);
-          return Math.max(minTickMs, baseTickMs - tiers * progressiveTickStep);
+          const profile = getModeDefinition(gameMode);
+          const tiers = Math.floor(score / Math.max(1, profile.tickStepEvery));
+          const cappedTiers = Math.min(profile.maxSteps, tiers);
+          const tick = profile.baseTickMs - cappedTiers * profile.tickStepMs;
+          return Math.max(profile.minTickMs, tick);
         }
 
-        return baseTickMs;
+        return getModeDefinition(gameMode).baseTickMs;
       }
 
       function clearGameLoop() {
