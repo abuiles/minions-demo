@@ -112,6 +112,30 @@
         text-align: center;
         letter-spacing: 0.8px;
       }
+
+      .mode-controls {
+        margin: 12px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .mode-controls label {
+        font-size: 0.9rem;
+        color: #cad3ff;
+      }
+
+      .mode-controls select {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #10061e;
+        color: #f4f9ff;
+        border-radius: 10px;
+        padding: 6px 10px;
+        font: inherit;
+      }
     </style>
   </head>
   <body>
@@ -120,6 +144,13 @@
         <span class="status-badge" aria-live="polite" aria-label="Demo status badge">status · live</span>
         <h1>Minion Mayhem</h1>
         <p id="flavor">Guide the little Minion through the lab, gobble bananas, and dodge yourself!</p>
+        <div class="mode-controls">
+          <label for="game-mode">Game mode</label>
+          <select id="game-mode">
+            <option value="normal">Normal</option>
+            <option value="progressive">Progressive speed</option>
+          </select>
+        </div>
         <canvas id="game" width="360" height="360" aria-label="Minion-themed snake game"></canvas>
         <p id="status" role="status">Score: 0 · Use ↑↓←→ or WASD to steer</p>
         <p id="hint">Keyboard controls: arrow keys or WASD steer the Minions.</p>
@@ -134,6 +165,7 @@
       const cols = canvas.width / tileSize;
       const rows = canvas.height / tileSize;
       const status = document.getElementById('status');
+      const gameModeSelect = document.getElementById('game-mode');
       const query = new URLSearchParams(location.search);
 
       const colors = {
@@ -152,6 +184,23 @@
       let nextDirection = { ...direction };
       let score = 0;
       let randomState = 0;
+      let gameMode = 'normal';
+      let gameLoop = null;
+      const defaultGameMode = 'normal';
+      const gameModeDefinitions = {
+        normal: {
+          label: 'Normal',
+          baseTickMs: 140,
+        },
+        progressive: {
+          label: 'Progressive speed',
+          baseTickMs: 140,
+          minTickMs: 60,
+          tickStepMs: 8,
+          tickStepEvery: 3,
+          maxSteps: 10,
+        },
+      };
       const itemTypes = { banana: 'banana', explosive: 'explosive' };
       const explosiveSpawnChance = 0.14;
       const supportedSeedModes = new Set([
@@ -159,6 +208,10 @@
         'explosive',
         'random',
         'normal',
+      ]);
+      const supportedGameModes = new Set([
+        'normal',
+        'progressive',
       ]);
       let queuedItemType = null;
       let item;
@@ -219,6 +272,57 @@
         const nextItemType = query.get('nextItemType') || query.get('itemType');
         if (nextItemType === null) return;
         setNextItemType(nextItemType);
+      }
+
+      function parseGameMode(mode) {
+        const normalized = typeof mode === 'string' ? mode.toLowerCase() : '';
+        return supportedGameModes.has(normalized) ? normalized : defaultGameMode;
+      }
+
+      function getModeDefinition(mode) {
+        return gameModeDefinitions[parseGameMode(mode)] || gameModeDefinitions[defaultGameMode];
+      }
+
+      function getTickInterval() {
+        if (gameMode === 'progressive') {
+          const profile = getModeDefinition(gameMode);
+          const tiers = Math.floor(score / Math.max(1, profile.tickStepEvery));
+          const cappedTiers = Math.min(profile.maxSteps, tiers);
+          const tick = profile.baseTickMs - cappedTiers * profile.tickStepMs;
+          return Math.max(profile.minTickMs, tick);
+        }
+
+        return getModeDefinition(gameMode).baseTickMs;
+      }
+
+      function clearGameLoop() {
+        if (gameLoop !== null) {
+          clearTimeout(gameLoop);
+          gameLoop = null;
+        }
+      }
+
+      function scheduleGameLoop() {
+        gameLoop = setTimeout(() => {
+          tick();
+          scheduleGameLoop();
+        }, getTickInterval());
+      }
+
+      function setGameMode(nextMode, shouldRenderHint = true) {
+        gameMode = parseGameMode(nextMode);
+
+        if (gameModeSelect) {
+          gameModeSelect.value = gameMode;
+        }
+
+        clearGameLoop();
+        scheduleGameLoop();
+
+        if (shouldRenderHint) {
+          const normalizedMode = gameMode === 'progressive' ? 'Progressive speed' : 'Normal';
+          status.textContent = `Mode: ${normalizedMode} · Minion crew: ${score} · steer with ↑↓←→ or WASD`;
+        }
       }
 
       function drawExplosive(target) {
@@ -380,22 +484,29 @@
         nextDirection = next;
       });
 
+      gameModeSelect.addEventListener('change', (event) => {
+        setGameMode(event.target.value, false);
+      });
+
       forceDeterministicSeedFromQuery();
       forceItemTypeFromQuery();
       item = spawnItem();
       window.__minionsDemo = {
         setSeed,
         setNextItemType,
+        setGameMode,
         getState: () => ({
           seed: randomState,
           snake: [...snake],
+          mode: gameMode,
+          tickInterval: getTickInterval(),
           item,
           score,
         }),
         tick,
       };
       draw();
-      setInterval(tick, 140);
+      setGameMode(query.get('mode') || 'normal', false);
     </script>
   </body>
 </html>
