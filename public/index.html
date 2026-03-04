@@ -8,10 +8,20 @@
       :root {
         color-scheme: dark;
         --bg: #0a0312;
+        --body-gradient: radial-gradient(circle at 20% -10%, #4a1f4b, transparent 40%),
+          radial-gradient(circle at 80% 0%, #1b6d87, transparent 45%),
+          linear-gradient(180deg, #0a0312 10%, #05070c 70%, #010105 100%);
         --panel: #1b0b2b;
+        --panel-border: rgba(255, 255, 255, 0.14);
+        --panel-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(10, 6, 20, 0.8));
+        --canvas-bg: radial-gradient(circle at 20% 10%, rgba(255, 154, 86, 0.18), rgba(0, 0, 0, 0.8)),
+          radial-gradient(circle at 80% 30%, rgba(98, 218, 207, 0.18), rgba(2, 6, 16, 0.9));
         --accent: #ff9a56;
         --secondary: #62dacf;
         --glass: rgba(255, 255, 255, 0.08);
+        --button-bg: rgba(255, 255, 255, 0.08);
+        --button-border: rgba(255, 255, 255, 0.2);
+        --button-text: #f4f9ff;
       }
 
       * {
@@ -27,9 +37,7 @@
         align-items: center;
         gap: 16px;
         font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
-        background: radial-gradient(circle at 20% -10%, #4a1f4b, transparent 40%),
-          radial-gradient(circle at 80% 0%, #1b6d87, transparent 45%),
-          linear-gradient(180deg, #0a0312 10%, #05070c 70%, #010105 100%);
+        background: var(--body-gradient);
         color: #f4f9ff;
         padding: 20px;
       }
@@ -45,8 +53,8 @@
         width: min(480px, 95vw);
         padding: 32px;
         border-radius: 20px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(10, 6, 20, 0.8));
-        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: var(--panel-gradient);
+        border: 1px solid var(--panel-border);
         box-shadow: 0 20px 70px rgba(6, 3, 15, 0.85);
         text-align: center;
       }
@@ -67,10 +75,70 @@
         height: auto;
         margin: 16px auto;
         border-radius: 16px;
-        background: radial-gradient(circle at 20% 10%, rgba(255, 154, 86, 0.18), rgba(0, 0, 0, 0.8)),
-          radial-gradient(circle at 80% 30%, rgba(98, 218, 207, 0.18), rgba(2, 6, 16, 0.9));
+        background: var(--canvas-bg);
         border: 3px solid var(--glass);
         display: block;
+      }
+
+      .skin-selector {
+        margin: 16px auto;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        max-width: 360px;
+      }
+
+      .skin-selector img {
+        width: 56px;
+        height: 48px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+      }
+
+      .skin-details {
+        flex: 1;
+        text-align: left;
+      }
+
+      .skin-details strong {
+        display: block;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+      }
+
+      .skin-details p {
+        margin: 4px 0 0;
+        font-size: 0.8rem;
+        color: rgba(244, 249, 255, 0.9);
+      }
+
+      .skin-selector button {
+        padding: 10px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--button-border);
+        background: var(--button-bg);
+        color: var(--button-text);
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 120ms ease, box-shadow 120ms ease;
+      }
+
+      .skin-selector button:hover,
+      .skin-selector button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        outline: none;
+      }
+
+      .skin-selector button[data-active='true'] {
+        background: var(--accent);
+        border-color: transparent;
+        color: #0a0312;
       }
 
       .status-badge {
@@ -121,6 +189,16 @@
         <h1>Minion Mayhem</h1>
         <p id="flavor">Guide the little Minion through the lab, gobble bananas, and dodge yourself!</p>
         <canvas id="game" width="360" height="360" aria-label="Minion-themed snake game"></canvas>
+        <div class="skin-selector" aria-label="Skin selection">
+          <img src="./assets/colombian-flag.svg" alt="Colombian flag colors" />
+          <div class="skin-details">
+            <strong>Colombian Skin</strong>
+            <p>Bath the Minion crew in yellow, blue, and red pride with a single tap.</p>
+          </div>
+          <button id="colombian-skin-button" type="button" data-active="false" aria-pressed="false">
+            Activate Colombian skin
+          </button>
+        </div>
         <p id="status" role="status">Score: 0 · Use ↑↓←→ or WASD to steer</p>
         <p id="hint">Keyboard controls: arrow keys or WASD steer the Minions.</p>
       </div>
@@ -134,18 +212,91 @@
       const cols = canvas.width / tileSize;
       const rows = canvas.height / tileSize;
       const status = document.getElementById('status');
+      const flavor = document.getElementById('flavor');
+      const skinButton = document.getElementById('colombian-skin-button');
       const query = new URLSearchParams(location.search);
 
-      const colors = {
-        yellow: '#f4d03f',
-        blue: '#1b61c7',
-        gray: '#3b3b3b',
-        lens: '#fdfdfd',
-        pupil: '#2b2b2b',
-        banana: '#f7cf4b',
-        explosive: '#ff4f4f',
-        fuse: '#ffd166',
+      const skinConfigs = {
+        default: {
+          cssVars: {
+            '--bg': '#0a0312',
+            '--body-gradient': 'radial-gradient(circle at 20% -10%, #4a1f4b, transparent 40%), radial-gradient(circle at 80% 0%, #1b6d87, transparent 45%), linear-gradient(180deg, #0a0312 10%, #05070c 70%, #010105 100%)',
+            '--panel': '#1b0b2b',
+            '--panel-border': 'rgba(255, 255, 255, 0.14)',
+            '--panel-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(10, 6, 20, 0.8))',
+            '--canvas-bg': 'radial-gradient(circle at 20% 10%, rgba(255, 154, 86, 0.18), rgba(0, 0, 0, 0.8)), radial-gradient(circle at 80% 30%, rgba(98, 218, 207, 0.18), rgba(2, 6, 16, 0.9))',
+            '--accent': '#ff9a56',
+            '--secondary': '#62dacf',
+            '--glass': 'rgba(255, 255, 255, 0.08)',
+            '--button-bg': 'rgba(255, 255, 255, 0.08)',
+            '--button-border': 'rgba(255, 255, 255, 0.2)',
+            '--button-text': '#f4f9ff',
+          },
+          colors: {
+            yellow: '#f4d03f',
+            blue: '#1b61c7',
+            gray: '#3b3b3b',
+            lens: '#fdfdfd',
+            pupil: '#2b2b2b',
+            banana: '#f7cf4b',
+            explosive: '#ff4f4f',
+            fuse: '#ffd166',
+          },
+          flavorText: 'Guide the little Minion through the lab, gobble bananas, and dodge yourself!',
+          buttonLabel: 'Switch to Colombian skin',
+        },
+        colombia: {
+          cssVars: {
+            '--body-gradient': 'linear-gradient(180deg, #ffd100 0%, #ffd100 33%, #0d3c91 33%, #0d3c91 66%, #ce1126 66%, #ce1126 100%)',
+            '--panel-border': 'rgba(255, 255, 255, 0.25)',
+            '--panel-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(4, 6, 20, 0.8))',
+            '--canvas-bg': 'linear-gradient(135deg, #ffd100 0%, #ffd100 33%, #0d3c91 33%, #0d3c91 66%, #ce1126 66%, #ce1126 100%)',
+            '--accent': '#ffd100',
+            '--secondary': '#ffe6b0',
+            '--glass': 'rgba(255, 255, 255, 0.15)',
+            '--button-bg': '#ffffff',
+            '--button-border': '#ffd100',
+            '--button-text': '#0a0312',
+          },
+          colors: {
+            yellow: '#ffe066',
+            blue: '#0b3c91',
+            gray: '#1c1b20',
+            lens: '#fdfdfd',
+            pupil: '#10060b',
+            banana: '#ffe066',
+            explosive: '#ff3b3b',
+            fuse: '#ffd166',
+          },
+          flavorText: 'Colombian pride fuels the Minion crew — dive into the yellow, blue, and red.',
+          buttonLabel: 'Return to classic skin',
+        },
       };
+
+      const colors = { ...skinConfigs.default.colors };
+      let currentSkin = 'default';
+
+      function applySkin(name) {
+        const config = skinConfigs[name];
+        if (!config) return;
+        Object.entries(config.cssVars).forEach(([varName, value]) => {
+          document.documentElement.style.setProperty(varName, value);
+        });
+        Object.assign(colors, config.colors);
+        flavor.textContent = config.flavorText;
+        skinButton.textContent = config.buttonLabel;
+        const isColombia = name === 'colombia';
+        skinButton.dataset.active = isColombia ? 'true' : 'false';
+        skinButton.setAttribute('aria-pressed', String(isColombia));
+        currentSkin = name;
+      }
+
+      skinButton.addEventListener('click', () => {
+        const nextSkin = currentSkin === 'colombia' ? 'default' : 'colombia';
+        applySkin(nextSkin);
+      });
+
+      applySkin('default');
 
       let snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
       let direction = { x: 1, y: 0 };

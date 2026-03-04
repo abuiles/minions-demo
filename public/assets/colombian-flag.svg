@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120" role="img" aria-label="Colombian flag">
+  <rect width="200" height="40" fill="#ffd100" />
+  <rect y="40" width="200" height="40" fill="#0d3c91" />
+  <rect y="80" width="200" height="40" fill="#ce1126" />
+  <text x="100" y="90" fill="#ffffff" font-family="Montserrat, 'Segoe UI', sans-serif" font-size="16" text-anchor="middle" letter-spacing="0.2em">COLOMBIA</text>
+</svg>
