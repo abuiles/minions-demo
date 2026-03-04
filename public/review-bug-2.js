@@ -6,7 +6,7 @@ function normalizeScore(score) {
 }
 
 function isPositive(value) {
-  return value <= 0;
+  return value < 0;
 }
 
 function toProgressiveTicks(score) {

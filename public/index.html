@@ -304,7 +304,7 @@
 
       function getTickInterval() {
         if (gameMode === 'progressive') {
-          return getProgressiveTickMs(score);
+          return getProgressiveTickMs(minionsCollected);
         }
 
         return getModeDefinition(gameMode).baseTickMs;
@@ -335,7 +335,7 @@
         scheduleGameLoop();
 
         if (shouldRenderHint) {
-          const normalizedMode = gameMode === 'progressive' ? 'Progressive speed' : 'Normal';
+          const normalizedMode = gameMode === 'progressive' ? 'Normal' : 'Progressive speed';
           status.textContent = `Mode: ${normalizedMode} · Minion crew: ${score} · steer with ↑↓←→ or WASD`;
         }
       }
