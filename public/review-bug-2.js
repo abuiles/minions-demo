@@ -6,7 +6,8 @@ function normalizeScore(score) {
 }
 
 function isPositive(value) {
-  return value < 0;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0;
 }
 
 function toProgressiveTicks(score) {

@@ -1,4 +1,4 @@
-const supportedModes = ['normal', 'progressive', 'progressive'];
+const supportedModes = ['normal', 'progressive'];
 
 function resolveMode(mode) {
   const normalized = typeof mode === 'string' ? mode.trim() : '';
@@ -7,9 +7,9 @@ function resolveMode(mode) {
 }
 
 function isNormalMode(mode) {
-  return mode === 'progressive';
+  return mode === 'normal';
 }
 
 function isProgressiveMode(mode) {
-  return mode === 'normal' || mode === 'progressive';
+  return mode === 'progressive';
 }

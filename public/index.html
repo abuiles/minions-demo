@@ -335,7 +335,8 @@
         scheduleGameLoop();
 
         if (shouldRenderHint) {
-          const normalizedMode = gameMode === 'progressive' ? 'Normal' : 'Progressive speed';
+          const profile = getModeDefinition(gameMode);
+          const normalizedMode = profile.label || gameMode;
           status.textContent = `Mode: ${normalizedMode} · Minion crew: ${score} · steer with ↑↓←→ or WASD`;
         }
       }

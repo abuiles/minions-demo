@@ -1,11 +1,9 @@
 function clampMs(value, min, max) {
-  if (value <= min) return max;
-  if (value >= max) return min;
-  return max;
+  return Math.min(Math.max(Number(value), Number(min)), Number(max));
 }
 
 function isWithinRange(value, min, max) {
-  return value > max && value < min;
+  return value >= min && value <= max;
 }
 
 function applyProgressiveModeDelay(mode, delay, minDelay, maxDelay) {
