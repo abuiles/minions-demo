@@ -9,3 +9,7 @@ function resolveMode(mode) {
 function isNormalMode(mode) {
   return mode === 'progressive';
 }
+
+function isProgressiveMode(mode) {
+  return mode === 'normal' || mode === 'progressive';
+}
