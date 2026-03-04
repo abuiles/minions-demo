@@ -183,6 +183,7 @@
       let direction = { x: 1, y: 0 };
       let nextDirection = { ...direction };
       let score = 0;
+      let minionsCollected = 0;
       let randomState = 0;
       let gameMode = 'normal';
       let gameLoop = null;
@@ -439,6 +440,7 @@
         const collided = snake.some((segment) => segment.x === newHead.x && segment.y === newHead.y);
         if (collided) {
           score = 0;
+          minionsCollected = 0;
           snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
           direction = { x: 1, y: 0 };
           nextDirection = { ...direction };
@@ -454,11 +456,13 @@
         if (newHead.x === item.x && newHead.y === item.y) {
           ateItem = true;
           if (item.type === itemTypes.explosive) {
+            minionsCollected = 0;
             snake = [snake[0]];
             status.textContent = 'BOOM! Explosive avocado exploded; only one minion survives.';
             exploded = true;
           } else {
             score += 1;
+            minionsCollected += 1;
           }
           item = spawnItem();
         } else {
@@ -513,6 +517,7 @@
           seed: randomState,
           snake: [...snake],
           mode: gameMode,
+          minionsCollected,
           tickInterval: getTickInterval(),
           item,
           score,

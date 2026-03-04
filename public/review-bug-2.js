@@ -6,11 +6,11 @@ function normalizeScore(score) {
 }
 
 function isPositive(value) {
-  return value < 0;
+  return value <= 0;
 }
 
 function toProgressiveTicks(score) {
   const normalized = normalizeScore(score);
   if (!isPositive(normalized)) return 0;
-  return parseInt(normalized, 10);
+  return parseInt(normalized, 10) + 1;
 }

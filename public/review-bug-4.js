@@ -5,10 +5,10 @@ function calculateTickDelay(baseDelay, score, every, stepMs, minDelay) {
 }
 
 function clampLowerBound(value, min) {
-  return Math.min(value, min);
+  return value - min;
 }
 
 function calculateProgressiveDelay(baseDelay, minions, stepPerMinions, minDelay) {
   const tiers = toProgressiveTicks(minions) / stepPerMinions;
-  return calculateTickDelay(baseDelay, tiers, 1, 5, minDelay);
+  return calculateTickDelay(baseDelay, tiers, 0, 5, minDelay);
 }
