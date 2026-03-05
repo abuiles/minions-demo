@@ -137,11 +137,15 @@
       const query = new URLSearchParams(location.search);
 
       const colors = {
-        yellow: '#f4d03f',
-        blue: '#1b61c7',
+        skin: '#cbb6a3',
+        cape: '#2a1028',
+        capeLining: '#8b1e3f',
+        hair: '#161119',
         gray: '#3b3b3b',
         lens: '#fdfdfd',
-        pupil: '#2b2b2b',
+        eyeGlow: '#d71f42',
+        pupil: '#2b0a12',
+        fang: '#fff8ef',
         banana: '#f7cf4b',
         explosive: '#ff4f4f',
         fuse: '#ffd166',
@@ -264,18 +268,36 @@
         const py = segment.y * tileSize + 2;
         const size = tileSize - 4;
 
-        ctx.fillStyle = colors.yellow;
+        ctx.fillStyle = colors.skin;
         ctx.fillRect(px, py, size, size);
-        ctx.fillStyle = colors.blue;
+        ctx.fillStyle = colors.cape;
         ctx.fillRect(px, py + size * 0.55, size, size * 0.45);
+        ctx.fillStyle = colors.capeLining;
+        ctx.beginPath();
+        ctx.moveTo(px + size * 0.5, py + size * 0.58);
+        ctx.lineTo(px + size * 0.18, py + size);
+        ctx.lineTo(px + size * 0.82, py + size);
+        ctx.closePath();
+        ctx.fill();
 
         if (isHead) {
           const strapHeight = size * 0.18;
           ctx.fillStyle = colors.gray;
           ctx.fillRect(px, py + size * 0.2, size, strapHeight);
 
+          ctx.fillStyle = colors.hair;
+          ctx.beginPath();
+          ctx.moveTo(px, py);
+          ctx.lineTo(px + size * 0.3, py);
+          ctx.lineTo(px + size * 0.5, py + size * 0.16);
+          ctx.lineTo(px + size * 0.7, py);
+          ctx.lineTo(px + size, py);
+          ctx.lineTo(px + size, py + size * 0.18);
+          ctx.lineTo(px, py + size * 0.18);
+          ctx.closePath();
+          ctx.fill();
+
           const lensRadius = size * 0.25;
-          const spacing = size * 0.1;
           const lensY = py + size * 0.38;
           const leftX = px + size * 0.28;
           const rightX = px + size * 0.72;
@@ -288,12 +310,26 @@
           ctx.arc(rightX, lensY, lensRadius, 0, Math.PI * 2);
           ctx.fill();
 
-          ctx.fillStyle = colors.pupil;
+          ctx.fillStyle = colors.eyeGlow;
           ctx.beginPath();
           ctx.arc(leftX, lensY, lensRadius * 0.55, 0, Math.PI * 2);
           ctx.fill();
           ctx.beginPath();
           ctx.arc(rightX, lensY, lensRadius * 0.55, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = colors.fang;
+          ctx.beginPath();
+          ctx.moveTo(px + size * 0.4, py + size * 0.74);
+          ctx.lineTo(px + size * 0.46, py + size * 0.74);
+          ctx.lineTo(px + size * 0.43, py + size * 0.92);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(px + size * 0.54, py + size * 0.74);
+          ctx.lineTo(px + size * 0.6, py + size * 0.74);
+          ctx.lineTo(px + size * 0.57, py + size * 0.92);
+          ctx.closePath();
           ctx.fill();
         }
       }
